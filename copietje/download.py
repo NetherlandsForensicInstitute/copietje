@@ -42,8 +42,10 @@ def determine_stream(trace, database=None):
         )
         # if the query had a result, skip this trace if the stored digest matches the one in trace' metadata
         if (row := cursor.fetchone()) and row['sha1'] == trace.get(f'data.{selected}.hash.sha1'):
+            LOG.debug('skipping download for trace %s, already present in database (sha1=%s)', trace.uid, row['sha1'])
             return False
 
+    LOG.debug('selected stream %s to download for trace %s', selected, trace.uid)
     return selected
 
 
