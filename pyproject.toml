@@ -52,8 +52,9 @@ check = [
 ]
 
 [tool.pdm.scripts]
-all = {composite = ["check", "test", "report"]}
+all = {composite = ["check", "download-spacy-model", "test", "report"]}
 check = {composite = ["flake8 copietje/", "mypy copietje/"]}
+download-spacy-model = {cmd = "spacy download nl_core_news_md"}
 report = {cmd = "coverage xml"}
 test = {cmd = "coverage run --module pytest --junit-xml pytest.xml tests/"}
 
