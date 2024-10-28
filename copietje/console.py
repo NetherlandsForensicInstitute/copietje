@@ -95,6 +95,7 @@ def download(*, context, database, target=None, limit=None, condenser=None, jobs
     target.mkdir(parents=True, exist_ok=True)
 
     with context, sqlite3.connect(database) as database:
+        database.row_factory = sqlite3.Row
         database.cursor().execute(SCHEMA)
         # search hansken for the documents to download + minhash
         documents = context.search(Term('type', 'document'), count=limit)
