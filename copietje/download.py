@@ -1,12 +1,6 @@
-from contextlib import contextmanager
-from functools import partial
 from logging import getLogger as logger
-import sqlite3
-import time
 
 from datasketch import LeanMinHash
-from hansken.recipes import export
-from hansken.tool import run
 
 
 LOG = logger(__name__)
@@ -26,17 +20,6 @@ SCHEMA = """
         minhash BLOB
     )
 """
-
-
-def download_documents(context):
-    with sqlite3.connect('document_metadata.db') as database, context:
-        database.cursor().execute(SCHEMA)
-        database.row_factory = sqlite3.Row
-        documents = context.search('type:document')
-        with profile():
-            export.bulk(documents, 'output',
-                        stream=partial(determine_stream, database=database),
-                        side_effect=partial(add_metadata_to_db, database=database))
 
 
 def determine_stream(trace, database=None):
@@ -99,14 +82,3 @@ def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
             mh,
         )
     )
-
-
-@contextmanager
-def profile():
-    t0 = time.perf_counter()
-    yield
-    print('Time:', time.perf_counter() - t0)
-
-
-if __name__ == '__main__':
-    run(with_context=download_documents)
