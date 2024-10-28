@@ -35,11 +35,11 @@ def download_documents(context):
         documents = context.search('type:document')
         with profile():
             export.bulk(documents, 'output',
-                        stream=determine_stream,
+                        stream=partial(determine_stream, database=database),
                         side_effect=partial(add_metadata_to_db, database=database))
 
 
-def determine_stream(trace):
+def determine_stream(trace, database=None):
     # Initializing the dict with `False: MIN_SIZE` ensures that only data streams larger than the minimum size will be
     # downloaded. If there are no data streams with a size above the minimum size, this will serve as the maximum size,
     # and `False` will be returned.
