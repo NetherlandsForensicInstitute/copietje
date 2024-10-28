@@ -31,7 +31,7 @@ SCHEMA = """
 def download_documents(context):
     with sqlite3.connect('document_metadata.db') as database, context:
         database.cursor().execute(SCHEMA)
-        documents = context.search('type:document', count=100_000)
+        documents = context.search('type:document')
         with profile():
             export.bulk(documents, 'output',
                         stream=determine_stream,
