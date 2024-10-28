@@ -47,7 +47,21 @@ def determine_stream(trace, database=None):
     sizes.update({stream: trace.get(f'data.{stream}.size', 0)
                   for stream in PREFERRED_STREAMS
                   if trace.get(f'data.{stream}.mimeClass', '') == 'text'})
-    return max(sizes, key=sizes.get)
+    selected = max(sizes, key=sizes.get)
+
+    if selected and database:
+        # a stream has been selected, and we've been handed a database, attempt to select trace' stream sha1
+        (cursor := database.cursor()).execute(
+            """
+            SELECT sha1 FROM documents WHERE uid = ?
+            """,
+            (trace.uid,)
+        )
+        # if the query had a result, skip this trace if the stored digest matches the one in trace' metadata
+        if (row := cursor.fetchone()) and row['sha1'] == trace.get(f'data.{selected}.hash.sha1'):
+            return False
+
+    return selected
 
 
 def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
