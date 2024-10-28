@@ -82,3 +82,5 @@ def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
             mh,
         )
     )
+    # commit open transactions now, a crashing download would otherwise roll back any open inserts
+    database.commit()
