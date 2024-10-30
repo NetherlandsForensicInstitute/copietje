@@ -1,12 +1,6 @@
-from contextlib import contextmanager
-from functools import partial
 from logging import getLogger as logger
-import sqlite3
-import time
 
 from datasketch import LeanMinHash
-from hansken.recipes import export
-from hansken.tool import run
 
 
 LOG = logger(__name__)
@@ -28,17 +22,7 @@ SCHEMA = """
 """
 
 
-def download_documents(context):
-    with sqlite3.connect('document_metadata.db') as database, context:
-        database.cursor().execute(SCHEMA)
-        documents = context.search('type:document')
-        with profile():
-            export.bulk(documents, 'output',
-                        stream=determine_stream,
-                        side_effect=partial(add_metadata_to_db, database=database))
-
-
-def determine_stream(trace):
+def determine_stream(trace, database=None):
     # Initializing the dict with `False: MIN_SIZE` ensures that only data streams larger than the minimum size will be
     # downloaded. If there are no data streams with a size above the minimum size, this will serve as the maximum size,
     # and `False` will be returned.
@@ -46,7 +30,24 @@ def determine_stream(trace):
     sizes.update({stream: trace.get(f'data.{stream}.size', 0)
                   for stream in PREFERRED_STREAMS
                   if trace.get(f'data.{stream}.mimeClass', '') == 'text'})
-    return max(sizes, key=sizes.get)
+    selected = max(sizes, key=sizes.get)
+
+    if selected and database:
+        cursor = database.cursor()
+        # a stream has been selected, and we've been handed a database, attempt to select trace' stream sha1
+        cursor.execute(
+            """
+            SELECT sha1 FROM documents WHERE uid = ?
+            """,
+            (trace.uid,)
+        )
+        # if the query had a result, skip this trace if the stored digest matches the one in trace' metadata
+        if (row := cursor.fetchone()) and row['sha1'] == trace.get(f'data.{selected}.hash.sha1'):
+            LOG.debug('skipping download for trace %s, already present in database (sha1=%s)', trace.uid, row['sha1'])
+            return False
+
+    LOG.debug('selected stream %s to download for trace %s', selected, trace.uid)
+    return selected
 
 
 def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
@@ -84,14 +85,5 @@ def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
             mh,
         )
     )
-
-
-@contextmanager
-def profile():
-    t0 = time.perf_counter()
-    yield
-    print('Time:', time.perf_counter() - t0)
-
-
-if __name__ == '__main__':
-    run(with_context=download_documents)
+    # commit open transactions now, a crashing download would otherwise roll back any open inserts
+    database.commit()

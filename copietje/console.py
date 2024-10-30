@@ -95,15 +95,14 @@ def download(*, context, database, target=None, limit=None, condenser=None, jobs
     target.mkdir(parents=True, exist_ok=True)
 
     with context, sqlite3.connect(database) as database:
+        database.row_factory = sqlite3.Row
         database.cursor().execute(SCHEMA)
         # search hansken for the documents to download + minhash
         documents = context.search(Term('type', 'document'), count=limit)
         # issue bulk download with side effects to store all the documents and the minhashes
-        # TODO: should the download crash halfway, how do we resume it? It's being downloaded in parallel, there's no
-        #       clear point to restart from... (should be doable if the database inserts can be done idempotent)
         LOG.info('starting bulk download of %d results (limited to %d)', documents.num_results, limit)
         export.bulk(documents, target,
-                    stream=determine_stream,
+                    stream=partial(determine_stream, database=database),
                     side_effect=partial(add_metadata_to_db, database=database, condenser=condenser),
                     jobs=jobs)
 
