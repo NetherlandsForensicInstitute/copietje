@@ -33,8 +33,9 @@ def determine_stream(trace, database=None):
     selected = max(sizes, key=sizes.get)
 
     if selected and database:
+        cursor = database.cursor()
         # a stream has been selected, and we've been handed a database, attempt to select trace' stream sha1
-        (cursor := database.cursor()).execute(
+        cursor.execute(
             """
             SELECT sha1 FROM documents WHERE uid = ?
             """,
