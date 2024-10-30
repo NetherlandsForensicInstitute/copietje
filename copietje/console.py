@@ -10,6 +10,7 @@ from datasketch import LeanMinHash, MinHashLSH
 from hansken.query import Term
 from hansken.recipes import export
 from hansken.tool import create_argument_parser, resolve_logging, run
+from tqdm import tqdm
 
 from copietje import Condenser
 from copietje.download import add_metadata_to_db, determine_stream, SCHEMA
@@ -86,7 +87,7 @@ def usage(exitcode=0):
     raise SystemExit(exitcode)
 
 
-def download(*, context, database, target=None, limit=None, condenser=None, jobs=4):
+def download(*, context, database, target=None, limit=None, condenser=None, jobs=4, progress=True):
     if not target:
         # default target to be the folder where the database is stored
         target = Path(database).parent
@@ -101,6 +102,16 @@ def download(*, context, database, target=None, limit=None, condenser=None, jobs
         documents = context.search(Term('type', 'document'), count=limit)
         # issue bulk download with side effects to store all the documents and the minhashes
         LOG.info('starting bulk download of %d results (limited to %d)', documents.num_results, limit)
+
+        if progress:
+            # overwrite documents with an iterable that show progress
+            documents = tqdm(
+                documents,
+                desc='downloading documents',
+                disable=None,  # disable progress if stderr is not a TTY
+                unit='docs',
+            )
+
         export.bulk(documents, target,
                     stream=partial(determine_stream, database=database),
                     side_effect=partial(add_metadata_to_db, database=database, condenser=condenser),
