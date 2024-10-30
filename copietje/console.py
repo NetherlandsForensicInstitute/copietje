@@ -35,6 +35,8 @@ download_parser.add_argument('--limit', type=int, default=None, help='max number
 download_parser.add_argument('--condenser', type=Condenser.from_spec, default=Condenser(),
                              help='tokenizer, normalizer, hash algorithm and permutations to be used for minhashing, '
                                   'separated by : (e.g.: "ws:norm-html:sha1:128")')
+download_parser.add_argument('--progress', dest='progress', default=True,
+                             action=argparse.BooleanOptionalAction, help='show progress')
 num_jobs = download_parser.add_mutually_exclusive_group(required=False)
 num_jobs.add_argument('--jobs', dest='jobs', type=int, default=4,
                       help='number of parallel tasks during download')
