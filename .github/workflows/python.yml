@@ -1,0 +1,25 @@
+name: Python
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: pdm-project/setup-pdm@v4
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      # install all dependencies (including development ones) defined through pyproject.toml
+      run: pdm install --group :all
+    - name: Run checks
+      run: pdm run check
+    - name: Download additional models
+      run: pdm run python -m ensurepip && pdm run download-spacy-model
+    - name: Run tests
+      run: pdm run test
