@@ -95,13 +95,10 @@ class HashIndex:
         with ZipFile(zip_file) as documents_zip:
             cur = self.database.cursor()
 
-            # LIMIT should be removed in final script
             cur.execute("""
                 SELECT path, uid, stream, minhash
                 FROM documents
                 WHERE tags IS NOT NULL
-                ORDER BY size ASC
-                LIMIT 200
             """)
             for row in cur:
                 if minhash := self._get_or_update_minhash(row, documents_zip):
@@ -111,13 +108,10 @@ class HashIndex:
         with ZipFile(zip_file) as documents_zip:
             cur = self.database.cursor()
 
-            # LIMIT should be removed in final script
             cur.execute("""
                 SELECT path, uid, stream, minhash
                 FROM documents
                 WHERE tags IS NULL
-                ORDER BY size ASC
-                LIMIT 200
             """)
             for row in cur:
                 if query_hash := self._get_or_update_minhash(row, documents_zip):
