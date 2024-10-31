@@ -99,6 +99,7 @@ class HashIndex:
                 SELECT path, uid, stream, minhash
                 FROM documents
                 WHERE tags IS NOT NULL
+                ORDER BY uid ASC
             """)
             for row in cur:
                 if minhash := self._get_or_update_minhash(row, documents_zip):
@@ -112,6 +113,7 @@ class HashIndex:
                 SELECT path, uid, stream, minhash
                 FROM documents
                 WHERE tags IS NULL
+                ORDER BY uid ASC
             """)
             for row in cur:
                 if query_hash := self._get_or_update_minhash(row, documents_zip):
