@@ -13,7 +13,7 @@ from hansken.tool import create_argument_parser, resolve_logging, run
 from tqdm import tqdm
 
 from copietje import Condenser
-from copietje.download import add_metadata_to_db, determine_stream, SCHEMA
+from copietje.download import add_metadata_to_db, determine_stream, log_error_to_db, SCHEMA
 from copietje.ranking import rank
 
 
@@ -117,6 +117,7 @@ def download(*, context, database, target=None, limit=None, condenser=None, jobs
         export.bulk(documents, target,
                     stream=partial(determine_stream, database=database),
                     side_effect=partial(add_metadata_to_db, database=database, condenser=condenser),
+                    on_error=partial(log_error_to_db, database=database),
                     jobs=jobs)
 
 

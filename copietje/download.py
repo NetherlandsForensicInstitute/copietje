@@ -59,6 +59,22 @@ def determine_stream(trace, database=None):
     return selected
 
 
+def log_error_to_db(database, trace, stream, exception=None, **_):
+    database.cursor().execute(
+        """
+        INSERT INTO errors (uid, stream, privileged_status, error)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            trace.uid,
+            stream,
+            str(trace.privileged or '') or None,
+            str(exception) if exception else None,
+        )
+    )
+    database.commit()
+
+
 def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
     mh = None
 
