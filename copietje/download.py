@@ -18,7 +18,16 @@ SCHEMA = """
         tags TEXT,
         privileged_status TEXT,
         minhash BLOB
-    )
+    );
+    CREATE TABLE IF NOT EXISTS errors (
+        uid TEXT,
+        -- equivalent to UNIXEPOCH(), which doesn't seem to be supported
+        ts INTEGER DEFAULT (CAST(strftime('%s', 'now') as INTEGER)),
+        stream TEXT,
+        privileged_status TEXT,
+        error TEXT,
+        PRIMARY KEY (uid, ts)
+    );
 """
 
 

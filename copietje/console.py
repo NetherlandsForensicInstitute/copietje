@@ -99,7 +99,7 @@ def download(*, context, database, target=None, limit=None, condenser=None, jobs
 
     with context, sqlite3.connect(database) as database:
         database.row_factory = sqlite3.Row
-        database.cursor().execute(SCHEMA)
+        database.cursor().executescript(SCHEMA)
         # search hansken for the documents to download + minhash
         documents = context.search(Term('type', 'document'), count=limit)
         # issue bulk download with side effects to store all the documents and the minhashes
