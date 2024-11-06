@@ -26,6 +26,7 @@ SCHEMA = """
         stream TEXT,
         privileged_status TEXT,
         error TEXT,
+        -- compound primary key to allow multiple failures of the same trace uid, differentiated by timestamp
         PRIMARY KEY (uid, ts)
     );
 """
