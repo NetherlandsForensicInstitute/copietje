@@ -18,7 +18,17 @@ SCHEMA = """
         tags TEXT,
         privileged_status TEXT,
         minhash BLOB
-    )
+    );
+    CREATE TABLE IF NOT EXISTS errors (
+        uid TEXT,
+        -- equivalent to UNIXEPOCH(), which doesn't seem to be supported
+        ts INTEGER DEFAULT (CAST(strftime('%s', 'now') as INTEGER)),
+        stream TEXT,
+        privileged_status TEXT,
+        error TEXT,
+        -- compound primary key to allow multiple failures of the same trace uid, differentiated by timestamp
+        PRIMARY KEY (uid, ts)
+    );
 """
 
 
@@ -48,6 +58,22 @@ def determine_stream(trace, database=None):
 
     LOG.debug('selected stream %s to download for trace %s', selected, trace.uid)
     return selected
+
+
+def log_error_to_db(database, trace, stream, exception=None, **_):
+    database.cursor().execute(
+        """
+        INSERT INTO errors (uid, stream, privileged_status, error)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            trace.uid,
+            stream,
+            str(trace.privileged or '') or None,
+            str(exception) if exception else None,
+        )
+    )
+    database.commit()
 
 
 def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
