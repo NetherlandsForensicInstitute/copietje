@@ -83,7 +83,7 @@ def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
     if condenser:
         try:
             # try to guess the encoding from the trace' metadata
-            encoding = data_stream(stream, fallback_encoding="utf-8").get_encoding(trace)
+            encoding = data_stream(stream, fallback_encoding='utf-8').get_encoding(trace)
             # open the freshly written file in text mode and calculate a minhash for the output
             # NB: doing this while the data is being written (as part of download.to_file in download.bulk) would be
             #     grand, but as download.bulk does not facilitate message passing and sqlite is *very* fussy about
