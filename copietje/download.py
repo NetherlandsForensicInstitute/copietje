@@ -1,6 +1,7 @@
 from logging import getLogger as logger
 
 from datasketch import LeanMinHash
+from hansken.recipes.export import data_stream
 
 
 LOG = logger(__name__)
@@ -81,12 +82,14 @@ def add_metadata_to_db(database, trace, stream, output, condenser=None, **_):
 
     if condenser:
         try:
+            # try to guess the encoding from the trace' metadata
+            encoding = data_stream(stream, fallback_encoding="utf-8").get_encoding(trace)
             # open the freshly written file in text mode and calculate a minhash for the output
             # NB: doing this while the data is being written (as part of download.to_file in download.bulk) would be
             #     grand, but as download.bulk does not facilitate message passing and sqlite is *very* fussy about
             #     accessing things from different threads, re-reading the content here the best we have, hoping the
             #     file's contents will still be available in memory and we won't slow things down too much 🙏
-            with open(output, 'rt') as text:
+            with open(output, 'rt', encoding=encoding, errors='replace') as text:
                 mh = LeanMinHash(condenser.make_hash(text))
                 buffer = bytearray(mh.bytesize('!'))
                 mh.serialize(buffer, '!')
